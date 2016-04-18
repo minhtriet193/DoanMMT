@@ -5,14 +5,16 @@
  */
 package udp.client1;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.net.*;
+//import java.io.BufferedReader;
+//import java.io.BufferedWriter;
+//import java.io.File;
+//import java.io.FileInputStream;
+//import java.io.FileOutputStream;
+//import java.io.FileReader;
+//import java.io.InputStream;
+//import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -24,11 +26,11 @@ import javax.swing.JOptionPane;
 import javax.swing.ListModel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+//import java.io.File;
+//import java.io.FileNotFoundException;
+//import java.io.FileWriter;
+//import java.io.IOException;
+//import java.io.InputStream;
 import java.util.Scanner;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 
@@ -38,13 +40,23 @@ import javazoom.jl.player.advanced.AdvancedPlayer;
  */
 public class Udp_Client1 extends javax.swing.JFrame {
 
+    //ghi lai loai button duoc chon
     private final int INSERT = 1;
+    //ghi lai port cua node
+    private static final int PORT = 4001;
+    //ghi lai ten cua node    
     private String nodeName = "Node1";
+    //ghi lai duong dan tap tin va thu muc cua node
     private String folderPath = "../UDPClient1/Node1FileShare/";
     private String folderPathDownload = "../UDPClient1/Node1Download/";
     private String filePathShareHeThong = "../UDPClient1/node1_listfileshare.txt";
+    //ghi lai ten file nhac duoc chon
     private String SelectedName = "";
+    //ghi lai lenh thuc thi
+    private String lenh ="";
+    
     public PlayMp3Thread play = null;
+    public SendAndReceiveThread send = null;
 
     /**
      * Creates new form Udp_Client1
@@ -81,6 +93,13 @@ public class Udp_Client1 extends javax.swing.JFrame {
         this.SelectedName = name;
     }
 
+    public void setLenh(String l) {
+        this.lenh = l;
+    }
+    public String getLenh() {
+        return this.lenh;
+    }
+    //lenh khoi tao
     public Udp_Client1() {
         initComponents();
     }
@@ -465,10 +484,214 @@ public class Udp_Client1 extends javax.swing.JFrame {
                 udp.loadFileDownload(udp.getFolderPathDownload(), udp.jListFileDaTai);
                 //load_listFileChiaSeTrenHeThong
                 udp.loadFileShareHeThong(udp.getfilePathShareHeThong());
-
             }
-
         });
+        //Trong ham main
+
+        try {
+            DatagramSocket serverSocket = new DatagramSocket(4001);
+            
+            byte[] receiveData = new byte[1024];
+            byte[] sendData = new byte[1024];
+            while (true) {
+
+                receiveData = new byte[1024];
+
+                DatagramPacket receivePacket
+                        = new DatagramPacket(receiveData, receiveData.length);
+
+                System.out.println("Waiting for datagram packet");
+
+                serverSocket.receive(receivePacket);
+
+                String sentence = new String(receivePacket.getData());
+
+                InetAddress IPAddress = receivePacket.getAddress();
+                int port = receivePacket.getPort();
+
+                //xu ly xem la lenh gi tu node gui
+                String[] s = sentence.split(" ");
+                int type = 0;
+
+                if (s[0].equals("update")) {
+                    type = 1;
+                } else if (s[0].equals("download")) {
+                    type = 2;
+                } else if (s[0].equals("updatesharefile")) {
+                    type = 3;
+                }
+
+                if (type == 1) {
+                    //sau khi nhan lenh se gui file lai cho node yeu cau
+                    //xu ly file can gui
+
+                    String fileLink = "../UDPClient1/Node.txt";
+                    File file = new File(fileLink);
+                    FileInputStream f = new FileInputStream(file);
+
+                    //chuyen thanh byte
+                    byte[] b = new byte[1024];
+                    int remainLength = (int) file.length();
+                    int off = 0;
+                    while (remainLength >= 1024) {
+                        b = new byte[1024];
+
+                        f.read(b, 0, 1024);
+
+                        off = off + 1024;
+                        remainLength = remainLength - 1024;
+                        //
+
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port);
+                        System.out.println("Sending data to " + b.length
+                                + " bytes to server, port 4567");
+
+                        serverSocket.send(dp);
+
+                    }
+                    if (remainLength > 0) {
+
+                        b = new byte[remainLength];
+                        int read = f.read(b, 0, remainLength);
+                        System.out.println("The number of bytes will be read: " + read);
+
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port);
+                        System.out.println("Sending data to " + b.length
+                                + " bytes to server.");
+
+                        serverSocket.send(dp);
+                    }
+                    f.close();
+
+                } else if (type == 2) {
+                    //sau khi nhan lenh se gui file lai cho node yeu cau
+                    //xu ly file can gui
+
+                    String fileLink = new Udp_Client1().getFolderPath() + s[1];
+                    File file = new File(fileLink);
+                    FileInputStream f = new FileInputStream(file);
+
+                    //chuyen thanh byte
+                    byte[] b = new byte[1024];
+                    int remainLength = (int) file.length();
+                    int off = 0;
+                    while (remainLength >= 1024) {
+                        b = new byte[1024];
+
+                        f.read(b, 0, 1024);
+
+                        off = off + 1024;
+                        remainLength = remainLength - 1024;
+                        //
+
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port);
+                        System.out.println("Sending data to " + b.length
+                                + " bytes to server, port 4567");
+
+                        serverSocket.send(dp);
+
+                    }
+                    if (remainLength > 0) {
+
+                        b = new byte[remainLength];
+                        int read = f.read(b, 0, remainLength);
+                        System.out.println("The number of bytes will be read: " + read);
+
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port);
+                        System.out.println("Sending data to " + b.length
+                                + " bytes to server.");
+
+                        serverSocket.send(dp);
+                    }
+                    f.close();
+                } else if (type == 3) {
+                    //sau khi nhan lenh se gui file lai cho node yeu cau
+                    //xu ly file can gui
+
+                    //tao file luu listshare     
+                    File file = new File("updatefileshare.txt");
+                    if (file.exists()) {
+                        file.createNewFile();
+                    }
+
+                    FileWriter fw = new FileWriter(file);
+                    BufferedWriter bw = new BufferedWriter(fw);
+                    File folder = new File(new Udp_Client1().getFolderPath());
+                    File[] listOfFiles = folder.listFiles();
+                    //ArrayList<String> results = new ArrayList<String>();
+                    //DefaultListModel model = new DefaultListModel();
+                    for (int i = 0; i < listOfFiles.length; i++) {
+                        if (listOfFiles[i].isFile()) {
+                            //System.out.println("File " + listOfFiles[i].getName());
+                            //results.add(listOfFiles[i].getName());
+                            //model.addElement(listOfFiles[i].getName());
+                            bw.write(new Udp_Client1().getNodeName() + " " + listOfFiles[i].getName() + "\r\n");
+
+                        } else if (listOfFiles[i].isDirectory()) {
+                            //System.out.println("Directory " + listOfFiles[i].getName());
+                        }
+                    }
+                    bw.close();
+                    fw.close();
+
+                    FileInputStream f = new FileInputStream(file);
+
+                    //chuyen thanh byte
+                    byte[] b = new byte[1024];
+                    int remainLength = (int) file.length();
+                    int off = 0;
+                    while (remainLength >= 1024) {
+                        b = new byte[1024];
+
+                        f.read(b, 0, 1024);
+
+                        off = off + 1024;
+                        remainLength = remainLength - 1024;
+                        //
+
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port);
+                        System.out.println("Sending data to " + b.length
+                                + " bytes to server, port "+ port);
+
+                        serverSocket.send(dp);
+
+                    }
+                    if (remainLength > 0) {
+
+                        b = new byte[remainLength];
+                        int read = f.read(b, 0, remainLength);
+                        System.out.println("The number of bytes will be read: " + read);
+
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port);
+                        System.out.println("Sending data to " + b.length
+                                + " bytes to server.");
+
+                        serverSocket.send(dp);
+                    }
+                    f.close();
+                }
+
+
+                /*System.out.println("From: " + IPAddress + ":" + port);
+                System.out.println("Message: " + sentence);
+
+                String capitalizedSentence = sentence.toUpperCase();
+
+                sendData = capitalizedSentence.getBytes();
+
+                DatagramPacket sendPacket
+                        = new DatagramPacket(sendData, sendData.length, IPAddress,
+                                port);
+
+                serverSocket.send(sendPacket);
+                 */
+            }
+        } catch (SocketException ex) {
+            Logger.getLogger(Udp_Client1.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Udp_Client1.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -502,13 +725,14 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
     private void updateAddress() {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        String x = jListAddress.getSelectedValue();
-        System.out.println(x);
-        ListModel a = jListAddress.getModel();
-
-        for (int i = 0; i < a.getSize(); i++) {
-            System.out.println(a.getElementAt(i));
-        }
+//        String x = jListAddress.getSelectedValue();
+//        System.out.println(x);
+//        ListModel a = jListAddress.getModel();
+//
+//        for (int i = 0; i < a.getSize(); i++) {
+//            System.out.println(a.getElementAt(i));
+//        }
+        JOptionPane.showMessageDialog(null, "this is option update");
     }
 
     public void loadAddress(String file) {
@@ -557,7 +781,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
             BufferedWriter bw = new BufferedWriter(fw);
             for (int i = 0; i < results.size(); i++) {
 
-                String s = this.getNodeName() + " " + results.get(i) + "\r\n";
+                String s = this.getNodeName() + "_" + results.get(i) + "\r\n";
                 bw.write(s);
 
             }
