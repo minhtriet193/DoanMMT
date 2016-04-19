@@ -42,25 +42,50 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
     //ghi lai loai button duoc chon
     private final int INSERT = 1;
+    private final int DELETE = 2;
     //ghi lai port cua node
-    private static final int PORT = 4001;
+    private static int PORT = 4001;
+    private static int ReceivePort = 0;
     //ghi lai ten cua node    
     private String nodeName = "Node1";
     //ghi lai duong dan tap tin va thu muc cua node
-    private String folderPath = "../UDPClient1/Node1FileShare/";
+    private String folderPathRoot = "../UDPClient1/";
+    private String folderPathShare = "../UDPClient1/Node1FileShare/";
     private String folderPathDownload = "../UDPClient1/Node1Download/";
     private String filePathShareHeThong = "../UDPClient1/node1_listfileshare.txt";
     //ghi lai ten file nhac duoc chon
     private String SelectedName = "";
     //ghi lai lenh thuc thi
-    private String lenh ="";
-    
+    private String lenh = "";
+
     public PlayMp3Thread play = null;
     public SendAndReceiveThread send = null;
+
+    //
+    public static DatagramSocket socket = null;
 
     /**
      * Creates new form Udp_Client1
      */
+    public DatagramSocket getSocket() {
+        return this.socket;
+    }
+    public String gerFolderPathRoot() {
+        return this.folderPathRoot;
+    }
+
+    public int getPort() {
+        return this.PORT;
+    }
+
+    public void setReceivePort(int port) {
+        this.ReceivePort = port;
+    }
+
+    public int getReceivePort() {
+        return this.ReceivePort;
+    }
+
     public String getNodeName() {
         return this.nodeName;
     }
@@ -70,11 +95,11 @@ public class Udp_Client1 extends javax.swing.JFrame {
     }
 
     public void setFolderPath(String folderLink) {
-        this.folderPath = folderLink;
+        this.folderPathShare = folderLink;
     }
 
     public String getFolderPath() {
-        return this.folderPath;
+        return this.folderPathShare;
     }
 
     public void setFolderPathDownload(String folderLink) {
@@ -96,9 +121,11 @@ public class Udp_Client1 extends javax.swing.JFrame {
     public void setLenh(String l) {
         this.lenh = l;
     }
+
     public String getLenh() {
         return this.lenh;
     }
+
     //lenh khoi tao
     public Udp_Client1() {
         initComponents();
@@ -390,6 +417,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
     private void btnUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUpdateActionPerformed
         // TODO add your handling code here:
+
         updateAddress();
     }//GEN-LAST:event_btnUpdateActionPerformed
 
@@ -479,7 +507,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                 //load_listAddress
                 udp.loadAddress("../UDPClient1/node.txt");
                 //load_listFileChiaSe
-                udp.loadFile(udp.getFolderPath(), udp.jListFileName);
+                udp.loadFileInsert(udp.getFolderPath(), udp.jListFileName);
                 //load_listFileDownload
                 udp.loadFileDownload(udp.getFolderPathDownload(), udp.jListFileDaTai);
                 //load_listFileChiaSeTrenHeThong
@@ -489,8 +517,9 @@ public class Udp_Client1 extends javax.swing.JFrame {
         //Trong ham main
 
         try {
-            DatagramSocket serverSocket = new DatagramSocket(4001);
-            
+
+            socket = new DatagramSocket(PORT);
+
             byte[] receiveData = new byte[1024];
             byte[] sendData = new byte[1024];
             while (true) {
@@ -502,7 +531,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
                 System.out.println("Waiting for datagram packet");
 
-                serverSocket.receive(receivePacket);
+                socket.receive(receivePacket);
 
                 String sentence = new String(receivePacket.getData());
 
@@ -513,11 +542,11 @@ public class Udp_Client1 extends javax.swing.JFrame {
                 String[] s = sentence.split(" ");
                 int type = 0;
 
-                if (s[0].equals("update")) {
+                if (sentence.equals("update address")) {
                     type = 1;
-                } else if (s[0].equals("download")) {
+                } else if (sentence.equals("download")) {
                     type = 2;
-                } else if (s[0].equals("updatesharefile")) {
+                } else if (sentence.equals("update sharefile")) {
                     type = 3;
                 }
 
@@ -546,7 +575,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                         System.out.println("Sending data to " + b.length
                                 + " bytes to server, port 4567");
 
-                        serverSocket.send(dp);
+                        socket.send(dp);
 
                     }
                     if (remainLength > 0) {
@@ -559,7 +588,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                         System.out.println("Sending data to " + b.length
                                 + " bytes to server.");
 
-                        serverSocket.send(dp);
+                        socket.send(dp);
                     }
                     f.close();
 
@@ -588,7 +617,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                         System.out.println("Sending data to " + b.length
                                 + " bytes to server, port 4567");
 
-                        serverSocket.send(dp);
+                        socket.send(dp);
 
                     }
                     if (remainLength > 0) {
@@ -601,7 +630,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                         System.out.println("Sending data to " + b.length
                                 + " bytes to server.");
 
-                        serverSocket.send(dp);
+                        socket.send(dp);
                     }
                     f.close();
                 } else if (type == 3) {
@@ -651,9 +680,9 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
                         DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port);
                         System.out.println("Sending data to " + b.length
-                                + " bytes to server, port "+ port);
+                                + " bytes to server, port " + port);
 
-                        serverSocket.send(dp);
+                        socket.send(dp);
 
                     }
                     if (remainLength > 0) {
@@ -666,7 +695,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                         System.out.println("Sending data to " + b.length
                                 + " bytes to server.");
 
-                        serverSocket.send(dp);
+                        socket.send(dp);
                     }
                     f.close();
                 }
@@ -693,7 +722,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
         }
 
     }
-
+    //het ham main
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnDelete;
     private javax.swing.JButton btnDownload;
@@ -724,15 +753,20 @@ public class Udp_Client1 extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     private void updateAddress() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//        String x = jListAddress.getSelectedValue();
-//        System.out.println(x);
-//        ListModel a = jListAddress.getModel();
-//
-//        for (int i = 0; i < a.getSize(); i++) {
-//            System.out.println(a.getElementAt(i));
-//        }
-        JOptionPane.showMessageDialog(null, "this is option update");
+
+        this.setLenh("update address");
+        this.setSelectedName(jListAddress.getSelectedValue());
+        try {
+            //JOptionPane.showMessageDialog(null, "this is option update");
+            Thread.sleep(1000);
+            //tao 1 port nhan thong tin ping
+            this.setReceivePort(5000);            
+            SendAndReceiveThread s = new SendAndReceiveThread(this);
+            s.start();
+        } catch (InterruptedException ex) {
+            System.out.println(ex.toString());
+        }
+
     }
 
     public void loadAddress(String file) {
@@ -740,8 +774,8 @@ public class Udp_Client1 extends javax.swing.JFrame {
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
             DefaultListModel model = new DefaultListModel();
-            String title = "NODE Port";
-            model.addElement(title);
+            //String title = "NODE Port";
+            //model.addElement(title);
             String line = "";
             while ((line = br.readLine()) != null) {
                 model.addElement(line);
@@ -754,36 +788,97 @@ public class Udp_Client1 extends javax.swing.JFrame {
         }
     }
 
-    public void loadFile(String folderPath, JList jListName) {
-        File folder = new File(folderPath);
-        File[] listOfFiles = folder.listFiles();
-        ArrayList<String> results = new ArrayList<String>();
-        DefaultListModel model = new DefaultListModel();
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].isFile()) {
-                //System.out.println("File " + listOfFiles[i].getName());
-                results.add(listOfFiles[i].getName());
-                model.addElement(listOfFiles[i].getName());
-            } else if (listOfFiles[i].isDirectory()) {
-                //System.out.println("Directory " + listOfFiles[i].getName());
-            }
-        }
-        jListName.setModel(model);
-        //ghi ket qua lai file note1_listfileshare
+    public void loadFileInsert(String folderPath, JList jListName) {
         try {
+            ArrayList<String> results = new ArrayList<String>();
+            DefaultListModel model = new DefaultListModel();
+
             File file = new File(this.getfilePathShareHeThong());
 
-            if (file.exists()) {
-                file.createNewFile();
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                results.add(line);
             }
+
+            File folder = new File(folderPath);
+            File[] listOfFiles = folder.listFiles();
+
+            for (int i = 0; i < listOfFiles.length; i++) {
+                if (listOfFiles[i].isFile()) {
+                    //System.out.println("File " + listOfFiles[i].getName());
+                    //kiem tra xem co trung lap khong
+
+                    String tam = listOfFiles[i].getName();
+                    if ((kiemtra(results, tam)) == 0) {
+                        results.add(listOfFiles[i].getName());
+                    }
+
+                    model.addElement(listOfFiles[i].getName());
+                } else if (listOfFiles[i].isDirectory()) {
+                    //System.out.println("Directory " + listOfFiles[i].getName());
+                }
+            }
+            jListName.setModel(model);
+            //ghi ket qua lai file note1_listfileshare           
 
             FileWriter fw = new FileWriter(file);
             BufferedWriter bw = new BufferedWriter(fw);
+
             for (int i = 0; i < results.size(); i++) {
-
-                String s = this.getNodeName() + "_" + results.get(i) + "\r\n";
+                String s = results.get(i) + "\r\n";
                 bw.write(s);
+            }
+            bw.close();
+            fw.close();
+        } catch (Exception e) {
+            System.out.print(e.toString());
+        }
+    }
 
+    public void loadFileDelete(String filePath, JList jListName) {
+        try {
+            ArrayList<String> results = new ArrayList<String>();
+            ArrayList<String> folderShare = new ArrayList<String>();
+            DefaultListModel model = new DefaultListModel();
+
+            File file = new File(this.getfilePathShareHeThong());
+
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                results.add(line);
+            }
+
+            File folder = new File(folderPathShare);
+            File[] listOfFiles = folder.listFiles();
+
+            for (int i = 0; i < listOfFiles.length; i++) {
+                if (listOfFiles[i].isFile()) {
+                    String tam = listOfFiles[i].getName();
+                    if ((kiemtra(folderShare, tam)) == 0) {
+                        folderShare.add(listOfFiles[i].getName());
+                    }
+                    model.addElement(listOfFiles[i].getName());
+                } else if (listOfFiles[i].isDirectory()) {
+                    //System.out.println("Directory " + listOfFiles[i].getName());
+                }
+            }
+            jListName.setModel(model);
+            //ghi ket qua lai file note1_listfileshare           
+
+            FileWriter fw = new FileWriter(file);
+            BufferedWriter bw = new BufferedWriter(fw);
+
+            delete(results, folderShare);
+
+            for (int i = 0; i < results.size(); i++) {
+                String s = results.get(i) + "\r\n";
+                bw.write(s);
             }
             bw.close();
             fw.close();
@@ -797,14 +892,43 @@ public class Udp_Client1 extends javax.swing.JFrame {
         //ArrayList<String> results = new ArrayList<String>();
         DefaultListModel model = new DefaultListModel();
         File file = new File(filePath);
-        file.canRead();
+
         try {
+            if (!(file.exists())) {
+                file.createNewFile();
+            }
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
+            ArrayList<String> arr = new ArrayList<String>();
             String line = "";
+            while ((line = br.readLine()) != null) {
+                if (kiemtra(jListFileName, line) == 1) {
+                    //model.addElement(line);
+                    arr.add(this.getNodeName() + "_" + line);
+                } else {
+                    //model.addElement(line);
+                    arr.add(line);
+                }
+            }
+            br.close();
+            fr.close();
+
+            FileWriter fw = new FileWriter(file);
+            BufferedWriter bw = new BufferedWriter(fw);
+            for (int i = 0; i < arr.size(); i++) {
+                bw.write(arr.get(i) + "\r\n");
+            }
+            bw.close();
+            fw.close();
+
+            fr = new FileReader(file);
+            br = new BufferedReader(fr);
+            line = "";
             while ((line = br.readLine()) != null) {
                 model.addElement(line);
             }
+            br.close();
+            fr.close();
         } catch (IOException ex) {
             System.out.println(ex.toString());
         }
@@ -841,7 +965,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
             File file = chooser.getSelectedFile();
             switch (type) {
                 case INSERT:
-                    insertFile(file, folderPath);
+                    insertFile(file, folderPathShare);
                     break;
             }
         }
@@ -871,7 +995,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
             is.close();
             os.close();
-            loadFile(folderPath, jListFileName);
+            loadFileInsert(folderPath, jListFileName);
             loadFileShareHeThong(this.getfilePathShareHeThong());
             //System.out.println("Fileopied successfull!");
 
@@ -882,10 +1006,50 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
     public void operationDeleted() {
         String fileName = jListFileName.getSelectedValue();
-        File file = new File(folderPath + fileName);
+        this.setSelectedName(fileName);
+        File file = new File(folderPathShare + fileName);
         file.delete();
-        loadFile(folderPath, jListFileName);
+        loadFileDelete(folderPathShare, jListFileName);
         loadFileShareHeThong(this.getfilePathShareHeThong());
+    }
+
+    public void operationDeletedNode(String folderRootPath, String s) {
+        File file = new File(folderRootPath + "node.txt");
+
+        try {
+            //lay du lieu file node.txt cua node
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            ArrayList<String> arr = new ArrayList<String>();
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                arr.add(line);
+            }
+            //so snah neu giong chuoi can xoa
+            for (int i = 0; i < arr.size(); i++) {
+                if (arr.get(i).equals(s)) {
+                    arr.remove(i);
+                }
+            }
+            br.close();
+            fr.close();
+            //ghi lai file node.txt
+            file = new File(folderRootPath + "node.txt");
+            FileWriter fw = new FileWriter(file);
+            BufferedWriter bw = new BufferedWriter(fw);
+
+            for (int i = 0; i < arr.size(); i++) {
+                bw.write(arr.get(i) + "\r\n");
+            }
+            bw.close();
+            fw.close();
+            loadAddress(folderRootPath + "node.txt");
+        } catch (FileNotFoundException ex) {
+            System.out.println(ex.toString());
+        } catch (IOException ex) {
+            System.out.println(ex.toString());
+        }
+
     }
 
     public void operationPlay() throws InterruptedException {
@@ -902,5 +1066,36 @@ public class Udp_Client1 extends javax.swing.JFrame {
     public void operationSearch() {
         String fileName = tfSearch.getText();
 
+    }
+
+    public int kiemtra(ArrayList<String> arr, String s) {
+        for (int i = 0; i < arr.size(); i++) {
+            if (arr.get(i).contains(s)) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    public int kiemtra(JList<String> list, String s) {
+        ListModel model = list.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            if (model.getElementAt(i).equals(s)) {
+                //file co trong thu muc share
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    public void delete(ArrayList<String> arr, ArrayList<String> share) {
+        for (int i = 0; i < arr.size(); i++) {
+            String[] s = arr.get(i).split("_");
+            if (s[0].equals(this.getNodeName())) {
+                if (kiemtra(share, s[1]) == 0) {
+                    arr.remove(i);
+                }
+            }
+        }
     }
 }

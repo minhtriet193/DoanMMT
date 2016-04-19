@@ -26,6 +26,7 @@ public class SendAndReceiveThread extends Thread {
     // thread được chạy (start)
 
     Udp_Client1 udp = new Udp_Client1();
+
     public SendAndReceiveThread() {
 
     }
@@ -35,68 +36,91 @@ public class SendAndReceiveThread extends Thread {
     }
 
     private InetAddress IPAddress;
-    boolean done;
-    boolean keepGoing;
+    //boolean done;
+    boolean keepGoing = false;
 
     @Override
     public void run() {
+        String pathRoot = udp.gerFolderPathRoot();
         //String s1;
-        ArrayList lines = new ArrayList();
-        int size;
-        BufferedReader br;
-
+        //ArrayList lines = new ArrayList();
+        //int size;
+        //BufferedReader br;
+        //int sendPort = udp.getSendPort();
         try {
             IPAddress = InetAddress.getByName("127.0.0.1");
-            System.out.println("Attemping to connect to " + IPAddress
-                    + ") via UDP port 4001");
 
+            //lay string lenh cua udp click button
             String s = udp.getLenh();
+
             String selected = "";
-            if(s.equals("update address")) {
-                //lay lua chon tren jlist
-                selected = udp.getSelectedName();
-            }
-            String selection[] = selected.split(" ");
-            
-            
-            byte[] sendData = new byte[1024];
-            sendData = s.getBytes();
-            //tao socket co port theo node
-            DatagramSocket socket = new DatagramSocket(4002);
-            DatagramPacket sendPacket
-                    = new DatagramPacket(sendData, sendData.length, IPAddress, 4001);
-            socket.send(sendPacket);
+            //lay dong lenh ma jlist udp chon
+            selected = udp.getSelectedName();
+            //tach chuoi lay port cna gui lenh
+            String[] selection = selected.split(" ");
+            Integer port = Integer.parseInt(selection[1]);
 
-            //nhan file
-            byte[] receiveData = new byte[1024];
-            int off = 0;
+            System.out.println("Attemping to connect to " + IPAddress
+                    + ") via UDP port " + port);
+            //tao soc ket tho port cua minh
+            DatagramSocket socket = new DatagramSocket(udp.getReceivePort());
 
-            //co the so sanh la lenh gi de tao file thich hop
-            String tam = "";
+            //neu button update thi lenh la update address
+            if (s.equals("update address")) {
 
-            FileOutputStream fos = new FileOutputStream(new File("d:/listfileshare.txt"));
+                byte[] sendData = new byte[1024];
+                sendData = s.getBytes();
 
-            while (true) {
-                socket.setSoTimeout(5000);
-                try {
-                    receiveData = new byte[1024];
+                DatagramPacket sendPacket
+                        = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                socket.send(sendPacket);
 
-                    DatagramPacket dp = new DatagramPacket(receiveData, receiveData.length);
+                //nhan file
+                byte[] receiveData = new byte[1024];
+                int off = 0;
 
-                    socket.receive(dp);
-                    byte[] b1 = new byte[dp.getLength()];
-                    fos.write(receiveData, 0, b1.length);
-                    off = off + b1.length;
+                //co the so sanh la lenh gi de tao file thich hop
+                String tam = "";
+                // tao file
+                FileOutputStream fos = new FileOutputStream(new File("d:/listfileshare.txt"));
 
-                    InetAddress address = dp.getAddress();
-                    int port = dp.getPort();
-                } catch (SocketTimeoutException ste) {
-                    break;
+                while (true) {
+                    socket.setSoTimeout(2000);
+                    try {
+                        receiveData = new byte[1024];
+
+                        DatagramPacket dp = new DatagramPacket(receiveData, receiveData.length);
+
+                        socket.receive(dp);
+
+                        keepGoing = true;
+
+                        byte[] b1 = new byte[dp.getLength()];
+                        fos.write(receiveData, 0, b1.length);
+                        off = off + b1.length;
+
+                        InetAddress address = dp.getAddress();
+                        int portSend = dp.getPort();
+
+                    } catch (SocketTimeoutException ste) {
+                        //xu ly xem keepGoin co = true
+                        if (keepGoing == true) {
+                            //co nhan file tra ve
+                        } else {
+                            //khong nhan file tra ve
+                            udp.operationDeletedNode(pathRoot, selected);
+                        }
+                        break;
+                    }
                 }
+                fos.close();
+                Thread.sleep(1000);
             }
-            fos.close();
+
         } catch (IOException ex) {
-            Logger.getLogger(SendAndReceiveThread.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println(ex.toString());
+        } catch (InterruptedException ex) {
+            System.out.println(ex.toString());
         }
     }
 }
