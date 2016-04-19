@@ -41,7 +41,7 @@ public class SendAndReceiveThread extends Thread {
 
     @Override
     public void run() {
-        String pathRoot = udp.gerFolderPathRoot();
+        String pathRoot = udp.getFolderPathRoot();
         //String s1;
         //ArrayList lines = new ArrayList();
         //int size;

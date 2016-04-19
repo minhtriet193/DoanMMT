@@ -45,14 +45,16 @@ public class Udp_Client1 extends javax.swing.JFrame {
     private final int DELETE = 2;
     //ghi lai port cua node
     private static int PORT = 4001;
-    private static int ReceivePort = 0;
+    private static int ReceivePort = 5000;
     //ghi lai ten cua node    
-    private String nodeName = "Node1";
+    private static String nodeName = "Node1";
     //ghi lai duong dan tap tin va thu muc cua node
-    private String folderPathRoot = "../UDPClient1/";
-    private String folderPathShare = "../UDPClient1/Node1FileShare/";
-    private String folderPathDownload = "../UDPClient1/Node1Download/";
-    private String filePathShareHeThong = "../UDPClient1/node1_listfileshare.txt";
+    private static String folderPathRoot = "../UDPClient1/";
+    private static String folderPathShare = "../UDPClient1/Node1FileShare/";
+    private static String folderPathDownload = "../UDPClient1/Node1Download/";
+    private static String filePathShareHeThong = "../UDPClient1/node1_listfileshare.txt";
+    private static String filePathNodeName = "../UDPClient1/node.txt";
+    
     //ghi lai ten file nhac duoc chon
     private String SelectedName = "";
     //ghi lai lenh thuc thi
@@ -62,15 +64,19 @@ public class Udp_Client1 extends javax.swing.JFrame {
     public SendAndReceiveThread send = null;
 
     //
+    private static InetAddress IPAddress;
     public static DatagramSocket socket = null;
+    boolean keepGoing = false;
 
     /**
      * Creates new form Udp_Client1
      */
+    
     public DatagramSocket getSocket() {
         return this.socket;
     }
-    public String gerFolderPathRoot() {
+
+    public String getFolderPathRoot() {
         return this.folderPathRoot;
     }
 
@@ -94,11 +100,11 @@ public class Udp_Client1 extends javax.swing.JFrame {
         return this.filePathShareHeThong;
     }
 
-    public void setFolderPath(String folderLink) {
+    public void setFolderPathShare(String folderLink) {
         this.folderPathShare = folderLink;
     }
 
-    public String getFolderPath() {
+    public String getFolderPathShare() {
         return this.folderPathShare;
     }
 
@@ -505,9 +511,9 @@ public class Udp_Client1 extends javax.swing.JFrame {
                 udp.setVisible(true);
                 udp.setTitle("Peer To Peer");
                 //load_listAddress
-                udp.loadAddress("../UDPClient1/node.txt");
+                udp.loadAddress(filePathNodeName);
                 //load_listFileChiaSe
-                udp.loadFileInsert(udp.getFolderPath(), udp.jListFileName);
+                udp.loadFileInsert(udp.getFolderPathShare(), udp.jListFileName);
                 //load_listFileDownload
                 udp.loadFileDownload(udp.getFolderPathDownload(), udp.jListFileDaTai);
                 //load_listFileChiaSeTrenHeThong
@@ -535,7 +541,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
                 String sentence = new String(receivePacket.getData());
 
-                InetAddress IPAddress = receivePacket.getAddress();
+                IPAddress = receivePacket.getAddress();
                 int port = receivePacket.getPort();
 
                 //xu ly xem la lenh gi tu node gui
@@ -549,12 +555,18 @@ public class Udp_Client1 extends javax.swing.JFrame {
                 } else if (sentence.equals("update sharefile")) {
                     type = 3;
                 }
+                else if(sentence.equals("insert sharefile")){
+                    type = 4;
+                }
+                else if(sentence.equals("delete sharefile")) {
+                    type = 5;
+                }
 
                 if (type == 1) {
                     //sau khi nhan lenh se gui file lai cho node yeu cau
                     //xu ly file can gui
 
-                    String fileLink = "../UDPClient1/Node.txt";
+                    String fileLink = filePathNodeName;
                     File file = new File(fileLink);
                     FileInputStream f = new FileInputStream(file);
 
@@ -573,7 +585,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
                         DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port);
                         System.out.println("Sending data to " + b.length
-                                + " bytes to server, port 4567");
+                                + " bytes to server, port "+port);
 
                         socket.send(dp);
 
@@ -595,8 +607,8 @@ public class Udp_Client1 extends javax.swing.JFrame {
                 } else if (type == 2) {
                     //sau khi nhan lenh se gui file lai cho node yeu cau
                     //xu ly file can gui
-
-                    String fileLink = new Udp_Client1().getFolderPath() + s[1];
+                    //s = "download abc.mp3"
+                    String fileLink = folderPathShare + s[1];
                     File file = new File(fileLink);
                     FileInputStream f = new FileInputStream(file);
 
@@ -645,7 +657,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
                     FileWriter fw = new FileWriter(file);
                     BufferedWriter bw = new BufferedWriter(fw);
-                    File folder = new File(new Udp_Client1().getFolderPath());
+                    File folder = new File(folderPathShare);
                     File[] listOfFiles = folder.listFiles();
                     //ArrayList<String> results = new ArrayList<String>();
                     //DefaultListModel model = new DefaultListModel();
@@ -654,7 +666,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                             //System.out.println("File " + listOfFiles[i].getName());
                             //results.add(listOfFiles[i].getName());
                             //model.addElement(listOfFiles[i].getName());
-                            bw.write(new Udp_Client1().getNodeName() + " " + listOfFiles[i].getName() + "\r\n");
+                            bw.write(nodeName + " " + listOfFiles[i].getName() + "\r\n");
 
                         } else if (listOfFiles[i].isDirectory()) {
                             //System.out.println("Directory " + listOfFiles[i].getName());
@@ -756,17 +768,79 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
         this.setLenh("update address");
         this.setSelectedName(jListAddress.getSelectedValue());
+        //gui va nhan xac minh den 1 port get dc
         try {
-            //JOptionPane.showMessageDialog(null, "this is option update");
-            Thread.sleep(1000);
-            //tao 1 port nhan thong tin ping
-            this.setReceivePort(5000);            
-            SendAndReceiveThread s = new SendAndReceiveThread(this);
-            s.start();
-        } catch (InterruptedException ex) {
+            IPAddress = InetAddress.getByName("127.0.0.1");
+
+            //lay string lenh cua udp click button
+            String s = this.getLenh();
+
+            String selected = "";
+            //lay dong lenh ma jlist udp chon
+            selected = this.getSelectedName();
+            //tach chuoi lay port cna gui lenh
+            String[] selection = selected.split(" ");
+            Integer port = Integer.parseInt(selection[1]);
+
+            System.out.println("Attemping to connect to " + IPAddress
+                    + ") via UDP port " + port);
+            //tao soc ket tho port cua minh
+            DatagramSocket socket = new DatagramSocket(this.getReceivePort());
+
+            //neu button update thi lenh la update address
+            if (s.equals("update address")) {
+
+                byte[] sendData = new byte[1024];
+                sendData = s.getBytes();
+
+                DatagramPacket sendPacket
+                        = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                socket.send(sendPacket);
+
+                //nhan file
+                byte[] receiveData = new byte[1024];
+                int off = 0;
+
+                //co the so sanh la lenh gi de tao file thich hop
+                String tam = "";
+                // tao file
+                FileOutputStream fos = new FileOutputStream(new File("d:/abc.txt"));
+
+                while (true) {
+                    socket.setSoTimeout(2000);
+                    try {
+                        receiveData = new byte[1024];
+
+                        DatagramPacket dp = new DatagramPacket(receiveData, receiveData.length);
+
+                        socket.receive(dp);
+
+                        keepGoing = true;
+
+                        byte[] b1 = new byte[dp.getLength()];
+                        fos.write(receiveData, 0, b1.length);
+                        off = off + b1.length;
+
+                        InetAddress address = dp.getAddress();
+                        int portSend = dp.getPort();
+
+                    } catch (SocketTimeoutException ste) {
+                        //xu ly xem keepGoin co = true
+                        if (keepGoing == true) {
+                            //co nhan file tra ve
+                        } else {
+                            //khong nhan file tra ve
+                            this.operationDeletedNode(this.folderPathRoot, selected);
+                        }
+                        socket.close();
+                        break;
+                    }
+                }
+                fos.close();
+            }
+        } catch (IOException ex) {
             System.out.println(ex.toString());
         }
-
     }
 
     public void loadAddress(String file) {
@@ -815,7 +889,6 @@ public class Udp_Client1 extends javax.swing.JFrame {
                     if ((kiemtra(results, tam)) == 0) {
                         results.add(listOfFiles[i].getName());
                     }
-
                     model.addElement(listOfFiles[i].getName());
                 } else if (listOfFiles[i].isDirectory()) {
                     //System.out.println("Directory " + listOfFiles[i].getName());
