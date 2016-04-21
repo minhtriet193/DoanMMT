@@ -165,6 +165,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
         btnSearch = new javax.swing.JButton();
         btnStop = new javax.swing.JButton();
         lbNameSearch = new javax.swing.JLabel();
+        btnRefresh = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -326,6 +327,14 @@ public class Udp_Client1 extends javax.swing.JFrame {
         lbNameSearch.setForeground(new java.awt.Color(0, 102, 102));
         lbNameSearch.setText("Tìm Kiếm Nhạc");
 
+        btnRefresh.setFont(new java.awt.Font("Times New Roman", 1, 12)); // NOI18N
+        btnRefresh.setText("Refresh");
+        btnRefresh.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnRefreshActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanelBottomLayout = new javax.swing.GroupLayout(jPanelBottom);
         jPanelBottom.setLayout(jPanelBottomLayout);
         jPanelBottomLayout.setHorizontalGroup(
@@ -337,13 +346,15 @@ public class Udp_Client1 extends javax.swing.JFrame {
                     .addGroup(jPanelBottomLayout.createSequentialGroup()
                         .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
-                        .addComponent(btnDownload))
+                        .addGroup(jPanelBottomLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(btnDownload, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(btnRefresh, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(jPanelBottomLayout.createSequentialGroup()
                         .addComponent(tfSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(btnSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(lbNameSearch))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
                 .addGroup(jPanelBottomLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanelBottomLayout.createSequentialGroup()
                         .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 222, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -361,7 +372,10 @@ public class Udp_Client1 extends javax.swing.JFrame {
                     .addComponent(lbFileDaTai))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelBottomLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(btnDownload)
+                    .addGroup(jPanelBottomLayout.createSequentialGroup()
+                        .addComponent(btnDownload)
+                        .addGap(10, 10, 10)
+                        .addComponent(btnRefresh))
                     .addGroup(jPanelBottomLayout.createSequentialGroup()
                         .addComponent(btnPlay)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -472,6 +486,12 @@ public class Udp_Client1 extends javax.swing.JFrame {
         operationDownload();
     }//GEN-LAST:event_btnDownloadActionPerformed
 
+    private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
+        // TODO add your handling code here:
+        loadFileShareHeThongLanDau(filePathShareHeThong);
+        //loadFileShareHeThong(filePathShareHeThong);  
+    }//GEN-LAST:event_btnRefreshActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -550,8 +570,8 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
                 String sentence = new String(receivePacket.getData());
 
-                System.out.println("Da nhan lenh: "+sentence);
-                
+                System.out.println("Da nhan lenh: " + sentence);
+
                 IPAddress = receivePacket.getAddress();
                 int port = receivePacket.getPort();
                 String s1 = sentence.substring(8);
@@ -728,18 +748,15 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
                         //lay string lenh cua udp click button
                         //String lenh = "update sharefile";
-
                         //gui lenh update address va nhan ve file updatesharefile.txt
                         //sendData = new byte[1024];
                         //sendData = lenh.getBytes();
-
                         //xu ly tung address gui lenh update sharefile
                         socketRecieve = new DatagramSocket(ReceivePortDownload);
 
                         //DatagramPacket sendPacket
                         //        = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         //socketRecieve.send(sendPacket);
-
                         //nhan file
                         receiveData = new byte[1024];
                         int off = 0;
@@ -812,7 +829,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                                                 arr1.remove(i);
                                             }
                                         }
-                                        for(int i=0; i<arr2.size(); i++){
+                                        for (int i = 0; i < arr2.size(); i++) {
                                             arr1.add(arr2.get(i));
                                         }
                                         file = new File(filePathShareHeThong);
@@ -857,6 +874,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
     private javax.swing.JButton btnDownload;
     private javax.swing.JButton btnInsert;
     private javax.swing.JButton btnPlay;
+    private javax.swing.JButton btnRefresh;
     private javax.swing.JButton btnSearch;
     private javax.swing.JButton btnStop;
     private javax.swing.JButton btnUpdate;
@@ -996,11 +1014,13 @@ public class Udp_Client1 extends javax.swing.JFrame {
                         //xu ly tung node get duoc tu file
                         //tach port cua node get duoc
                         keepGoing = false;
-                        
+
                         selected = arr.get(i);
-                        
+
                         String[] adr = arr.get(i).split(" ");
-                        
+
+                        adr[1] = adr[1].trim();
+
                         Integer p = Integer.parseInt(adr[1]);
                         socketRecieve = new DatagramSocket(this.getReceivePort());
                         sendData = new byte[1024];
@@ -1087,6 +1107,11 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
             File file = new File(this.getfilePathShareHeThong());
 
+            if(!(file.exists()))
+            {
+                file.createNewFile();
+            }
+            
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
 
@@ -1417,11 +1442,6 @@ public class Udp_Client1 extends javax.swing.JFrame {
         play.stop();
     }
 
-    public void operationSearch() {
-        String fileName = tfSearch.getText();
-
-    }
-
     public int kiemtra(ArrayList<String> arr, String s) {
         for (int i = 0; i < arr.size(); i++) {
             if (arr.get(i).contains(s)) {
@@ -1699,7 +1719,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                                 bw.close();
                                 fw.close();
                                 loadAddress(filePathNodeName);
-*/
+                                 */
                             } else {
                                 //khong nhan file tra ve
                                 this.operationDeletedNode(this.folderPathRoot, node.get(i));
@@ -1871,7 +1891,6 @@ public class Udp_Client1 extends javax.swing.JFrame {
 
                     socketRecieve = new DatagramSocket(this.getReceivePortDownload());
 
-                    
                     byte[] sendData = new byte[1024];
                     sendData = lenh.getBytes();
 
@@ -1879,7 +1898,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                     DatagramPacket sendPacket
                             = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                     socketRecieve.send(sendPacket);
-                    
+
                     //tiep tuc gui file                    
                     //tao file luu listshare     
                     File file = new File("updatesharefile.txt");
@@ -1917,7 +1936,7 @@ public class Udp_Client1 extends javax.swing.JFrame {
                         remainLength = remainLength - 1024;
                         //
 
-                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port+2);
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port + 2);
                         System.out.println("Sending data to " + b.length
                                 + " bytes to server, port " + port);
 
@@ -1930,18 +1949,17 @@ public class Udp_Client1 extends javax.swing.JFrame {
                         int read = f.read(b, 0, remainLength);
                         System.out.println("The number of bytes will be read: " + read);
 
-                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port+2);
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port + 2);
                         System.out.println("Sending data to " + b.length
                                 + " bytes to server.");
 
                         socketRecieve.send(dp);
                     }
                     f.close();
-                    
+
                     //dong socket
                     socketRecieve.close();
-                    
-                    
+
                 } catch (Exception e) {
                     System.out.println(e.toString());
                 }
@@ -1949,4 +1967,75 @@ public class Udp_Client1 extends javax.swing.JFrame {
         }
     }
 
+    public void operationSearch() {
+       
+        ListModel<String> model = jListFileShareTrenHeThong.getModel();
+        ArrayList<String> results = new ArrayList<String>();
+        String canTim = tfSearch.getText();
+        for(int i=0; i<model.getSize(); i++){
+            //tach chuoi bo Nodex
+            String soSanh = model.getElementAt(i).substring(6);
+            soSanh = soSanh.substring(0, soSanh.length()-4);
+            if(SoSanh(canTim,soSanh)){
+                results.add(model.getElementAt(i));
+            }
+        }
+        if(results.isEmpty()){
+            JOptionPane.showMessageDialog(null, "Không tìm thấy bài hát bạn cần tìm !");            
+        }
+        DefaultListModel<String> modelResults  = new DefaultListModel<String>();
+        for(int i=0; i<results.size();i++){
+            modelResults.addElement(results.get(i));
+        }
+        jListFileShareTrenHeThong.setModel(modelResults);
+    }
+
+    public boolean SoSanh(String canTim, String soSanh) {
+
+        String s = canTim;
+        String s1 = soSanh;
+        int i, j, k, loi;
+        int saiSo = (int) Math.round(s.length() * 0.3);
+
+        //so sanh so luong ky tu 2 string da co sai so; 
+        if ((s1.length() < (s.length() - saiSo)) || (s1.length() > (s.length() + saiSo))) {
+            return false;
+        }
+
+        i = j = loi = 0;
+
+        while (i < s.length() && j < s1.length()) {
+
+            if (s.charAt(i) != s1.charAt(j)) {
+
+                loi++;
+
+                for (k = 1; k <= saiSo; k++) {
+
+                    if ((i + k < s.length()) && s.charAt(i + k) == s1.charAt(j)) {
+                        i += k;
+//loi += k – 1;
+                        break;
+                    } else if ((j + k < s1.length()) && s.charAt(i) == s1.charAt(j + k)) {
+                        j += k;
+//loi += k – 1;
+                        break;
+                    }
+                }
+            }
+            i++;
+            j++;
+        }
+
+        //neu s1 trong 2 String con thua thi phan thua duoc + vao loi
+        int x = s.length() - i;
+        int y = s1.length() - j;
+        loi = loi + (x - y);
+
+        if (loi <= saiSo) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
