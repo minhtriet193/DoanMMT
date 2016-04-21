@@ -19,6 +19,7 @@ import javax.swing.ListModel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import java.util.Scanner;
+import javax.swing.SwingUtilities;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 
 /**
@@ -31,9 +32,9 @@ public class Udp_Client2 extends javax.swing.JFrame {
     private final int INSERT = 1;
     private final int DELETE = 2;
     //ghi lai port cua node
-    private static int PORT = 4002;
-    private static int ReceivePortAddress = 6000;
-    private static int ReceivePortDownload = 6001;
+    private static int PORT = 5001;
+    private static int ReceivePortAddress = 5002;
+    private static int ReceivePortDownload = 5003;
     //ghi lai ten cua node    
     private static String nodeName = "Node2";
     //ghi lai duong dan tap tin va thu muc cua node
@@ -430,11 +431,13 @@ public class Udp_Client2 extends javax.swing.JFrame {
     private void btnInsertActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
         operationInsert("Open afile", 1);
+        operationEdit();
     }
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
         operationDeleted();
+        operationEdit();
     }
 
     private void btnPlayActionPerformed(java.awt.event.ActionEvent evt) {
@@ -495,13 +498,16 @@ public class Udp_Client2 extends javax.swing.JFrame {
             java.util.logging.Logger.getLogger(Udp_Client2.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-
+        Udp_Client2 udp = new Udp_Client2();
+        udp.setVisible(true);
+        udp.setTitle("Peer To Peer");
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
                 try {
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                    SwingUtilities.updateComponentTreeUI(udp);
                 } catch (ClassNotFoundException ex) {
                     Logger.getLogger(Udp_Client2.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (InstantiationException ex) {
@@ -512,9 +518,6 @@ public class Udp_Client2 extends javax.swing.JFrame {
                     Logger.getLogger(Udp_Client2.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
-                Udp_Client2 udp = new Udp_Client2();
-                udp.setVisible(true);
-                udp.setTitle("Peer To Peer");
                 //load_listAddress
                 udp.loadAddress(filePathNodeName);
                 //load_listFileChiaSe
@@ -544,8 +547,10 @@ public class Udp_Client2 extends javax.swing.JFrame {
 
                 socket.receive(receivePacket);
 
+                
                 String sentence = new String(receivePacket.getData());
-
+                System.out.println("da nhan: " +sentence);
+                
                 IPAddress = receivePacket.getAddress();
                 int port = receivePacket.getPort();
                 String s1 = sentence.substring(8);
@@ -556,16 +561,13 @@ public class Udp_Client2 extends javax.swing.JFrame {
                 if (sentence.contains("update address")) {
                     type = 1;
                 } else if (sentence.contains("download")) {
-
                     s1 = s1.trim();
                     System.out.println(s1);
                     type = 2;
                 } else if (sentence.contains("update sharefile")) {
                     type = 3;
-                } else if (sentence.contains("insert sharefile")) {
+                } else if (sentence.contains("edit sharefile")) {
                     type = 4;
-                } else if (sentence.contains("delete sharefile")) {
-                    type = 5;
                 }
 
                 if (type == 1) {
@@ -714,6 +716,129 @@ public class Udp_Client2 extends javax.swing.JFrame {
                         socket.send(dp);
                     }
                     f.close();
+                } else if (type == 4) {
+                    try {
+                        boolean check = false;
+                        //luu du lieu lay tu file cua minh
+                        ArrayList<String> arr1 = new ArrayList<String>();
+                        //luu du lieu lay tu file nhan duoc
+                        ArrayList<String> arr2 = new ArrayList<String>();
+                        IPAddress = InetAddress.getByName("127.0.0.1");
+
+                        //lay string lenh cua udp click button
+                        //String lenh = "update sharefile";
+
+                        //gui lenh update address va nhan ve file updatesharefile.txt
+                        //sendData = new byte[1024];
+                        //sendData = lenh.getBytes();
+
+                        //xu ly tung address gui lenh update sharefile
+                        socketRecieve = new DatagramSocket(ReceivePortDownload);
+
+                        //DatagramPacket sendPacket
+                        //        = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                        //socketRecieve.send(sendPacket);
+
+                        //nhan file
+                        receiveData = new byte[1024];
+                        int off = 0;
+
+                        //co the so sanh la lenh gi de tao file thich hop
+                        // tao file
+                        FileOutputStream fos = new FileOutputStream(new File(folderPathRoot + "updatesharefile.txt"));
+                        //FileOutputStream fos = new FileOutputStream(new File("d:/share.txt"));
+                        while (true) {
+                            socketRecieve.setSoTimeout(1000);
+                            try {
+                                receiveData = new byte[1024];
+
+                                DatagramPacket dp = new DatagramPacket(receiveData, receiveData.length);
+
+                                socketRecieve.receive(dp);
+
+                                check = true;
+
+                                byte[] b1 = new byte[dp.getLength()];
+                                fos.write(receiveData, 0, b1.length);
+                                off = off + b1.length;
+
+                                InetAddress address = dp.getAddress();
+                                int portSend = dp.getPort();
+
+                            } catch (SocketTimeoutException ste) {
+                                //xu ly xem check  = true
+                                if (check == true) {
+                                    //co nhan file tra ve thi xu ly them vao file nodex_listsharefile.txt cua minh
+                                    //doc file node cua minh len ghi vao List
+
+                                    File file = new File(filePathShareHeThong);
+                                    FileReader fr = new FileReader(file);
+                                    BufferedReader br = new BufferedReader(fr);
+                                    String line = "";
+                                    while ((line = br.readLine()) != null) {
+                                        arr1.add(line);
+                                    }
+                                    br.close();
+                                    fr.close();
+
+                                    //doc tiep file updatesharefile.txt vua nhan ve
+                                    file = new File(folderPathRoot + "updatesharefile.txt");
+                                    fr = new FileReader(file);
+                                    br = new BufferedReader(fr);
+                                    while ((line = br.readLine()) != null) {
+                                        arr2.add(line);
+                                    }
+                                    br.close();
+                                    fr.close();
+
+                                    if (arr2.isEmpty()) {
+                                        //ghi lai ket qua vao file nodex_listsharefile cua minh
+                                        file = new File(filePathShareHeThong);
+                                        FileWriter fw = new FileWriter(file);
+                                        BufferedWriter bw = new BufferedWriter(fw);
+
+                                        for (int i = 0; i < arr1.size(); i++) {
+                                            bw.write(arr1.get(i) + "\r\n");
+                                        }
+                                        bw.close();
+                                        fw.close();
+                                    } else {
+                                        String nodeNao = "";
+                                        nodeNao = arr2.get(0).substring(0, 5);
+                                        for (int i = 0; i < arr1.size(); i++) {
+                                            if (arr1.get(i).contains(nodeNao)) {
+                                                arr1.remove(i);
+                                            }
+                                        }
+                                        for(int i=0; i<arr2.size(); i++){
+                                            arr1.add(arr2.get(i));
+                                        }
+                                        file = new File(filePathShareHeThong);
+                                        FileWriter fw = new FileWriter(file);
+                                        BufferedWriter bw = new BufferedWriter(fw);
+
+                                        for (int i = 0; i < arr1.size(); i++) {
+                                            bw.write(arr1.get(i) + "\r\n");
+                                        }
+                                        bw.close();
+                                        fw.close();
+                                    }
+                                    //load lai du lieu jlist
+                                    udp.loadFileShareHeThong(filePathShareHeThong);
+                                } else {
+                                    //khong nhan file tra ve thi cho qua
+                                    //this.operationDeletedNode(this.folderPathRoot, selected);
+                                }
+                                socketRecieve.close();
+                                break;
+                            }
+                        }
+                        fos.close();
+                        check = false;
+
+                    } catch (IOException ex) {
+                        System.out.println(ex.toString());
+                    }
                 }
             }
         } catch (SocketException ex) {
@@ -1482,9 +1607,9 @@ public class Udp_Client2 extends javax.swing.JFrame {
     public void xulySauKhiUpDateAddress() {
         ArrayList<String> node = new ArrayList<String>();
         node.add("Node1 4001");
-        node.add("Node2 4002");
-        node.add("Node3 4003");
-        node.add("Node4 4004");
+        node.add("Node2 5001");
+        node.add("Node3 6001");
+        node.add("Node4 7001");
         for (int i = 0; i < node.size(); i++) {
             boolean check = false;
             String[] s1 = node.get(i).split(" ");
@@ -1499,12 +1624,6 @@ public class Udp_Client2 extends javax.swing.JFrame {
                     //lay string lenh cua udp click button
                     String s = "update address";
 
-                    //String selected = "";
-                    //lay dong lenh ma jlist udp chon
-                    //selected = this.getSelectedName();
-                    //tach chuoi lay port cna gui lenh
-                    //String[] selection = selected.split(" ");
-                    //Integer port = Integer.parseInt(selection[1]);
                     System.out.println("Attemping to connect to " + IPAddress
                             + ") via UDP port " + port);
                     //tao soc ket tho port cua minh
@@ -1523,8 +1642,6 @@ public class Udp_Client2 extends javax.swing.JFrame {
                     byte[] receiveData = new byte[1024];
                     int off = 0;
 
-                    //co the so sanh la lenh gi de tao file thich hop
-                    //String tam = "";
                     // tao file
                     FileOutputStream fos = new FileOutputStream(new File(this.getFolderPathRoot() + "checknode.txt"));
                     //FileOutputStream fos = new FileOutputStream(new File("c:/checknode.txt"));
@@ -1543,14 +1660,12 @@ public class Udp_Client2 extends javax.swing.JFrame {
                             fos.write(receiveData, 0, b1.length);
                             off = off + b1.length;
 
-                            //InetAddress address = dp.getAddress();
-                            //int portSend = dp.getPort();
                         } catch (SocketTimeoutException ste) {
-                            //xu ly xem keepGoin co = true
+                            //xu ly xem check = true
                             if (check == true) {
                                 //co nhan file tra ve thi xu ly them vao file node.txt cua minh
                                 //doc file node cua minh len ghi vao List
-
+/*
                                 File file = new File(filePathNodeName);
                                 FileReader fr = new FileReader(file);
                                 BufferedReader br = new BufferedReader(fr);
@@ -1584,6 +1699,7 @@ public class Udp_Client2 extends javax.swing.JFrame {
                                 bw.close();
                                 fw.close();
                                 loadAddress(filePathNodeName);
+*/
                             } else {
                                 //khong nhan file tra ve
                                 this.operationDeletedNode(this.folderPathRoot, node.get(i));
@@ -1593,6 +1709,7 @@ public class Udp_Client2 extends javax.swing.JFrame {
                         }
                     }
                     fos.close();
+
                 } catch (IOException ex) {
                     System.out.println(ex.toString());
                 }
@@ -1611,11 +1728,11 @@ public class Udp_Client2 extends javax.swing.JFrame {
         if (s0.equals("Node1")) {
             port = 4001;
         } else if (s0.equals("Node2")) {
-            port = 4002;
+            port = 5001;
         } else if (s0.equals("Node3")) {
-            port = 4003;
+            port = 6001;
         } else if (s0.equals("Node4")) {
-            port = 4004;
+            port = 7001;
         }
 
         this.setLenh(("download " + s1));
@@ -1724,13 +1841,110 @@ public class Udp_Client2 extends javax.swing.JFrame {
             } catch (Exception e) {
                 System.out.println(e.toString());
             }
-
         }
     }
 
-    public static String trimspace(String str) {
-        str = str.replaceAll("\\s+", " ");
-        str = str.replaceAll("(^\\s+|\\s+$)", "");
-        return str;
+    public void operationEdit() {
+        ArrayList<String> node = new ArrayList<String>();
+        node.add("Node1 4001");
+        node.add("Node2 5001");
+        node.add("Node3 6001");
+        node.add("Node4 7001");
+        //gui lenh "edit sharefile" de tat ca cac node
+        for (int i = 0; i < node.size(); i++) {
+            boolean check = false;
+            String[] adr = node.get(i).split(" ");
+            int port = Integer.parseInt(adr[1]);
+            //khong gui den node cua minh
+            if (!(adr[0].equals(nodeName))) {
+                try {
+                    IPAddress = InetAddress.getByName("127.0.0.1");
+
+                    socketRecieve = null;
+                    //lay string lenh cua udp click button
+                    String lenh = "edit sharefile";
+
+                    System.out.println("Attemping to connect to " + IPAddress
+                            + ") via UDP port " + port);
+                    //tao soc ket tho port cua minh
+
+                    socketRecieve = new DatagramSocket(this.getReceivePortDownload());
+
+                    
+                    byte[] sendData = new byte[1024];
+                    sendData = lenh.getBytes();
+
+                    //gui lenh
+                    DatagramPacket sendPacket
+                            = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                    socketRecieve.send(sendPacket);
+                    
+                    //tiep tuc gui file                    
+                    //tao file luu listshare     
+                    File file = new File("updatesharefile.txt");
+                    if (file.exists()) {
+                        file.createNewFile();
+                    }
+
+                    FileWriter fw = new FileWriter(file);
+                    BufferedWriter bw = new BufferedWriter(fw);
+                    File folder = new File(folderPathShare);
+                    File[] listOfFiles = folder.listFiles();
+                    //lay danh sach file trong thu muc share
+                    for (int j = 0; j < listOfFiles.length; j++) {
+                        if (listOfFiles[j].isFile()) {
+                            bw.write(nodeName + " " + listOfFiles[j].getName() + "\r\n");
+                        } else if (listOfFiles[j].isDirectory()) {
+
+                        }
+                    }
+                    bw.close();
+                    fw.close();
+
+                    FileInputStream f = new FileInputStream(file);
+
+                    //chuyen thanh byte
+                    byte[] b = new byte[1024];
+                    int remainLength = (int) file.length();
+                    int off = 0;
+                    while (remainLength >= 1024) {
+                        b = new byte[1024];
+
+                        f.read(b, 0, 1024);
+
+                        off = off + 1024;
+                        remainLength = remainLength - 1024;
+                        //
+
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port+2);
+                        System.out.println("Sending data to " + b.length
+                                + " bytes to server, port " + port);
+
+                        socketRecieve.send(dp);
+
+                    }
+                    if (remainLength > 0) {
+
+                        b = new byte[remainLength];
+                        int read = f.read(b, 0, remainLength);
+                        System.out.println("The number of bytes will be read: " + read);
+
+                        DatagramPacket dp = new DatagramPacket(b, b.length, InetAddress.getLocalHost(), port+2);
+                        System.out.println("Sending data to " + b.length
+                                + " bytes to server.");
+
+                        socketRecieve.send(dp);
+                    }
+                    f.close();
+                    
+                    //dong socket
+                    socketRecieve.close();
+                    
+                    
+                } catch (Exception e) {
+                    System.out.println(e.toString());
+                }
+            }
+        }
     }
 }
