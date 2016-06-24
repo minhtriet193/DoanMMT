@@ -27,7 +27,7 @@ import javazoom.jl.player.advanced.AdvancedPlayer;
  * @author Administrator
  */
 public class Udp_Client2 extends javax.swing.JFrame {
-
+    private static Udp_Client2 udp = new Udp_Client2();
     //ghi lai loai button duoc chon
     private final int INSERT = 1;
     private final int DELETE = 2;
@@ -42,7 +42,7 @@ public class Udp_Client2 extends javax.swing.JFrame {
     private static String folderPathShare = "../UDPClient2/Node2FileShare/";
     private static String folderPathDownload = "../UDPClient2/Node2Download/";
     private static String filePathShareHeThong = "../UDPClient2/node2_listfileshare.txt";
-    private static String filePathNodeName = "../UDPClient2/node.txt";
+    private static String filePathNodeName = "../UDPClient2/nodes.txt";
 
     //ghi lai ten file nhac duoc chon
     private String SelectedName = "";
@@ -436,10 +436,14 @@ public class Udp_Client2 extends javax.swing.JFrame {
 
     private void btnUpdateActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
-        if (socketRecieve.isConnected()) {
-            socketRecieve.close();
-        }
+        this.setLenh("update address");
+        this.setSelectedName(jListAddress.getSelectedValue());
+        try{
         updateAddress();
+        }
+        catch(Exception ex) {
+            System.out.println(ex.toString());
+        }
         xulySauKhiUpDateAddress();
     }
 
@@ -518,9 +522,9 @@ public class Udp_Client2 extends javax.swing.JFrame {
             java.util.logging.Logger.getLogger(Udp_Client2.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-        Udp_Client2 udp = new Udp_Client2();
+        //Udp_Client2 udp = new Udp_Client2();
         udp.setVisible(true);
-        udp.setTitle("Peer To Peer");
+        udp.setTitle(nodeName);
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
 
@@ -549,7 +553,14 @@ public class Udp_Client2 extends javax.swing.JFrame {
             }
         });
         //Trong ham main
-
+        try {
+            Thread.sleep(1000);
+            UpdateThread update = new UpdateThread();
+            update.setUdp(udp);
+            update.run();
+        } catch (Exception ex) {
+            System.out.println(ex.toString());
+        }
         try {
 
             socket = new DatagramSocket(PORT);
@@ -901,8 +912,8 @@ public class Udp_Client2 extends javax.swing.JFrame {
 
     private void updateAddress() {
 
-        this.setLenh("update address");
-        this.setSelectedName(jListAddress.getSelectedValue());
+        //this.setLenh("update address");
+        //this.setSelectedName(jListAddress.getSelectedValue());
         keepGoing = false;
         try {
             ArrayList<String> arr = new ArrayList<String>();
@@ -942,7 +953,7 @@ public class Udp_Client2 extends javax.swing.JFrame {
             FileOutputStream fos = new FileOutputStream(new File(this.getFolderPathRoot() + "checknode.txt"));
             //FileOutputStream fos = new FileOutputStream(new File("c:/checknode.txt"));
             while (true) {
-                socketRecieve.setSoTimeout(1500);
+                socketRecieve.setSoTimeout(1000);
                 try {
                     receiveData = new byte[1024];
 
@@ -988,7 +999,7 @@ public class Udp_Client2 extends javax.swing.JFrame {
                         br.close();
                         fr.close();
                         //ghi lai ket qua vao file node.txt cua minh
-                        file = new File(this.getFolderPathRoot() + "node.txt");
+                        file = new File(this.getFolderPathRoot() + "nodes.txt");
                         FileWriter fw = new FileWriter(file);
                         BufferedWriter bw = new BufferedWriter(fw);
                         for (int i = 0; i < arr.size(); i++) {
@@ -1058,9 +1069,10 @@ public class Udp_Client2 extends javax.swing.JFrame {
                             } catch (SocketTimeoutException ste) {
                                 //xu ly xem keepGoin co = true
                                 if (keepGoing == true) {
-                                    //co nhan file tra ve
+                                    System.out.println(selected +" online");
                                 } else {
                                     //khong nhan file tra ve
+                                    System.out.println(selected +" offline");
                                     this.operationDeletedNode(this.folderPathRoot, selected);
                                 }
                                 socketRecieve.close();
@@ -1412,7 +1424,7 @@ public class Udp_Client2 extends javax.swing.JFrame {
             br.close();
             fr.close();
             //ghi lai file node.txt
-            file = new File(folderRootPath + "node.txt");
+            file = new File(folderRootPath + "nodes.txt");
             FileWriter fw = new FileWriter(file);
             BufferedWriter bw = new BufferedWriter(fw);
 
@@ -1421,7 +1433,7 @@ public class Udp_Client2 extends javax.swing.JFrame {
             }
             bw.close();
             fw.close();
-            loadAddress(folderRootPath + "node.txt");
+            loadAddress(folderRootPath + "nodes.txt");
         } catch (FileNotFoundException ex) {
             System.out.println(ex.toString());
         } catch (IOException ex) {
@@ -2041,5 +2053,11 @@ public class Udp_Client2 extends javax.swing.JFrame {
         } else {
             return false;
         }
+    }
+
+    public void updateThongTin() {
+        operationUpdateFileShare();
+        loadFileShareHeThong(getfilePathShareHeThong());
+        xulySauKhiUpDateAddress();
     }
 }
